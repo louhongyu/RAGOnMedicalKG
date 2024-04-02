@@ -13,6 +13,8 @@ model = ModelAPI(MODEL_URL="http://你的IP:3001/generate")
 
 class KGRAG():
     def __init__(self):
+        #将kg中的实体或者属性，从英文翻译成中文。构造一个中文的实体或者属性字典。方便中文展示。
+        #但是这里的实体和属性是否是足够穷尽了，还是值得考虑的。
         self.cn_dict = {
                 "name":"名称",
                 "desc":"疾病简介",
@@ -41,6 +43,8 @@ class KGRAG():
                 "Producer":"在售药品",
                 "Symptom":"疾病症状"
         }
+
+        #定义实体和属性之间的关系，比如实体check中拥有name和need_check两个属性，代表检查这个实体中，包含了名称和诊断检查两个属性。
         self.entity_rel_dict = {
             "check":["name", 'need_check'],
             "department":["name", 'belongs_to'],
@@ -50,11 +54,13 @@ class KGRAG():
             "producer":["name"],
             "symptom":["name", 'has_symptom'],
         }
-        return
+        return #初始化函数或者叫构造函数，不需要返回值，这个return一般是不需要的
 
+    #识别用户查询中的医学实体和相关术语。将query和entity连接起来。
     def entity_linking(self, query):
         return entity_parser.check_medical(query)
 
+    #link_entity_rel 方法通过与预训练模型的交互，确定用户查询中提及的实体相关的信息类别。这种方法能够帮助系统更准确地理解用户的查询意图，从而提供更精确的信息检索和回答。
     def link_entity_rel(self, query, entity, entity_type):
         cate = [self.cn_dict.get(i) for i in self.entity_rel_dict.get(entity_type)]
         prompt = "请判定问题：{query}所提及的是{entity}的哪几个信息，请从{cate}中进行选择，并以列表形式返回。".format(query=query, entity=entity, cate=cate)
@@ -63,6 +69,7 @@ class KGRAG():
         print([prompt, answer, cls_rel])
         return cls_rel
 
+    #根据查询语句中的实体相关信息，cypher查找kg中实体相关的所有属性和关系，返回一个事实数据。
     def recall_facts(self, cls_rel, entity_type, entity_name, depth=1):
         entity_dict = {
             "check":"Check",
@@ -102,12 +109,14 @@ class KGRAG():
         return list(triples)
 
 
+    #构造一个标准化的提示词模板
     def format_prompt(self, query, context):
         prompt = "这是一个关于医疗领域的问题。给定以下知识三元组集合，三元组形式为<subject, relation, object>，表示subject和object之间存在relation关系" \
                  "请先从这些三元组集合中找到能够支撑问题的部分，在这里叫做证据，并基于此回答问题。如果没有找到，那么直接回答没有找到证据，回答不知道，如果找到了，请先回答证据的内容，然后在给出最终答案" \
                  "知识三元组集合为：" + str(context) + "\n问题是：" + query + "\n请回答："
         return prompt
 
+    
     def chat(self, query):
         "{'耳聋': ['disease', 'symptom']}"
         print("step1: linking entity.....")
