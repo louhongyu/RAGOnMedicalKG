@@ -5,6 +5,7 @@
 # Date: 18-10-5
 from py2neo import Graph
 
+
 class AnswerSearcher:
     def __init__(self):
         self.g = Graph(
@@ -15,6 +16,7 @@ class AnswerSearcher:
         self.num_limit = 20
 
     '''执行cypher查询，并返回相应结果'''
+    #根据输入的sqls，获取问题类型和sql请求，把sql请求中每一条拿出来执行cypher查询，得到answers。最后调用这个答案回复模板，根据不同的问题类型，润色后得到最终的答案。
     def search_main(self, sqls):
         final_answers = []
         for sql_ in sqls:
@@ -30,6 +32,7 @@ class AnswerSearcher:
         return final_answers
 
     '''根据对应的qustion_type，调用相应的回复模板'''
+    #根据问题的类型和答案，去调用不同的回应模板。包括了症状，成因，预防措施，治疗，疗程等。
     def answer_prettify(self, question_type, answers):
         final_answer = []
         if not answers:
